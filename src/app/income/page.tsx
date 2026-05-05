@@ -162,12 +162,15 @@ export default function IncomePage() {
   }
 
   const handleExportCSV = () => {
-    if (incomeSources.length === 0) {
+    // Only export selected incomes
+    const selectedIncomesData = incomeSources.filter(income => selectedIncomes.has(income.$id))
+
+    if (selectedIncomesData.length === 0) {
       toast({ variant: "destructive", title: "No records to export" })
       return
     }
 
-    const allRecords = incomeSources.map(income => ({
+    const allRecords = selectedIncomesData.map(income => ({
       Source: income.source,
       Amount: income.amount,
       Date: new Date(income.$createdAt).toLocaleDateString()
@@ -192,7 +195,7 @@ export default function IncomePage() {
     a.click()
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
-    toast({ title: "CSV exported successfully" })
+    toast({ title: `${allRecords.length} records exported successfully` })
   }
 
   const totalIncome = incomeSources?.reduce((sum, inc) =>
@@ -225,7 +228,7 @@ export default function IncomePage() {
           <div className="md:hidden space-y-3 p-3 bg-muted/20 rounded-lg">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Total Income</span>
-              <span className="text-sm font-bold text-primary truncate">{formatUGX(totalIncome)}</span>
+              <span className="text-sm font-bold text-white truncate">{formatUGX(totalIncome)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Sources</span>
@@ -237,7 +240,7 @@ export default function IncomePage() {
           <div className="hidden md:flex justify-between items-center p-4 bg-muted/20 rounded-lg">
             <div className="flex flex-col">
               <span className="text-xs font-bold uppercase text-muted-foreground">Total Income</span>
-              <span className="text-lg font-bold text-primary truncate">{formatUGX(totalIncome)}</span>
+              <span className="text-lg font-bold text-white truncate">{formatUGX(totalIncome)}</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="text-xs font-bold uppercase text-muted-foreground">Sources</span>
@@ -300,7 +303,7 @@ export default function IncomePage() {
                       {new Date(income.$createdAt).toLocaleDateString()}
                     </td>
                     <td className="p-3 text-right">
-                      <span className="font-bold text-positive">
+                      <span className="font-bold text-white">
                         {formatUGX(income.amount)}
                       </span>
                     </td>
@@ -315,7 +318,7 @@ export default function IncomePage() {
             )}
           </div>
 
-          {/* Mobile View - Expandable Cards */}
+          {/* Mobile View */}
           <div className="md:hidden space-y-3">
             {incomeSources.map((income) => (
               <Card key={income.$id} className="overflow-hidden">
@@ -330,7 +333,7 @@ export default function IncomePage() {
                     <div className="font-medium truncate">{income.source}</div>
                     <div className="text-sm text-muted-foreground">{new Date(income.$createdAt).toLocaleDateString()}</div>
                   </div>
-                  <div className="font-bold text-positive">{formatUGX(income.amount)}</div>
+                  <div className="font-bold text-white">{formatUGX(income.amount)}</div>
                 </div>
               </Card>
             ))}

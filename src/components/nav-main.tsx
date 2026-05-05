@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Home,
   Wallet,
-  PiggyBank,
+  PieChart,
   FileText
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -24,7 +24,7 @@ import { Separator } from "@/components/ui/separator"
 const navItems = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Income", href: "/income", icon: Wallet },
-  { name: "Budgets", href: "/budgets", icon: PiggyBank },
+  { name: "Budgets", href: "/budgets", icon: PieChart },
   { name: "Records", href: "/transactions", icon: FileText },
 ]
 

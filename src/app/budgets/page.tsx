@@ -304,7 +304,7 @@ export default function BudgetsPage() {
           <div className="md:hidden space-y-3 p-3 bg-muted/20 rounded-lg">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Total Budget</span>
-              <span className="text-sm font-bold text-primary truncate">{formatUGX(budgetMetrics.totalLimit)}</span>
+              <span className="text-sm font-bold text-white truncate">{formatUGX(budgetMetrics.totalLimit)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Allocated</span>
@@ -312,7 +312,7 @@ export default function BudgetsPage() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Unallocated</span>
-              <span className={cn("text-sm font-bold truncate", budgetMetrics.unallocated < 0 ? "text-destructive" : "text-positive")}>
+              <span className="text-sm font-bold text-white truncate">
                 {budgetMetrics.unallocated < 0 ? `-${formatUGX(Math.abs(budgetMetrics.unallocated))}` : formatUGX(budgetMetrics.unallocated)}
               </span>
             </div>
@@ -325,7 +325,7 @@ export default function BudgetsPage() {
           <div className="hidden md:flex justify-between items-center p-4 bg-muted/20 rounded-lg">
             <div className="flex flex-col">
               <span className="text-xs font-bold uppercase text-muted-foreground">Total Budget</span>
-              <span className="text-lg font-bold text-primary truncate">{formatUGX(budgetMetrics.totalLimit)}</span>
+              <span className="text-lg font-bold text-white truncate">{formatUGX(budgetMetrics.totalLimit)}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-bold uppercase text-muted-foreground">Allocated</span>

@@ -404,6 +404,16 @@ export class InvoiceService extends DatabaseService {
 
 
   /**
+   * Update an existing invoice record.
+   * @param id - The invoice document ID.
+   * @param data - Partial data to update.
+   * @returns The updated invoice document.
+   */
+  static async updateInvoice(id: string, data: Partial<InvoiceDocument>): Promise<InvoiceDocument> {
+    return await this.update<InvoiceDocument>('invoices', id, data)
+  }
+
+  /**
    * Delete an invoice record.
    * @param id - The invoice document ID to delete.
    */

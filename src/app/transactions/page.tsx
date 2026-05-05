@@ -10,7 +10,10 @@ import { SidebarNav, BottomNav } from "@/components/nav-main"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, Filter, Loader2, Trash2, FileText, Plus, Download, MoreHorizontal } from "lucide-react"
+import { Search, Filter, Loader2, Trash2, FileText, Plus, Download, MoreHorizontal, Receipt } from "lucide-react"
+import { TableSkeleton, CardListSkeleton } from "@/components/loading-states"
+import { EmptyList, EmptySearchResults } from "@/components/empty-state"
+import { useDebounce } from "@/hooks/use-debounce"
 import { cn, formatUGX } from "@/lib/utils"
 import { useUser } from "@/appwrite"
 import { BudgetService, ExpenseService, InvoiceService } from "@/appwrite/database"
@@ -29,32 +32,23 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox"
 import { ExpenseDocument, InvoiceDocument, BudgetDocument } from "@/appwrite/database"
 
-// Record Card Component for mobile expandable list
+// Record Card Component for mobile list
 function RecordCard({ record, isSelected, onToggle }: {
   record: any,
   isSelected: boolean,
   onToggle: () => void
 }) {
-  const [expanded, setExpanded] = useState(false)
-
   const isExpense = record.type === 'expense'
   const name = isExpense ? record.source : record.clientName
-  const description = isExpense ? (record.description || "None") : (record.invoiceNumber || "None")
   const amount = isExpense ? record.amount : record.totalAmount
 
   return (
     <Card className="overflow-hidden">
-      <div
-        className="p-3 flex items-center gap-3 cursor-pointer"
-        onClick={() => setExpanded(!expanded)}
-      >
+      <div className="p-3 flex items-center gap-3">
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={(e) => {
-            e.stopPropagation()
-            onToggle()
-          }}
+          onChange={() => onToggle()}
           className="h-4 w-4 rounded border-gray-300"
         />
         <div className="flex-1 min-w-0">
@@ -64,28 +58,10 @@ function RecordCard({ record, isSelected, onToggle }: {
               {isExpense ? 'Expense' : 'Invoice'}
             </span>
           </div>
-          <div className="text-sm text-muted-foreground">{formatUGX(amount)}</div>
+          <div className="text-sm text-muted-foreground">{new Date(record.$createdAt).toLocaleDateString()}</div>
         </div>
-        <div className="text-muted-foreground">
-          {expanded ? '▲' : '▼'}
-        </div>
+        <div className="font-bold text-white">{formatUGX(amount)}</div>
       </div>
-      {expanded && (
-        <div className="px-3 pb-3 pt-0 text-sm space-y-1 border-t bg-muted/20">
-          <div className="flex justify-between py-1">
-            <span className="text-muted-foreground">Client:</span>
-            <span>None</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span className="text-muted-foreground">Description:</span>
-            <span>{description}</span>
-          </div>
-          <div className="flex justify-between py-1">
-            <span className="text-muted-foreground">Date:</span>
-            <span>{new Date(record.$createdAt).toLocaleDateString()}</span>
-          </div>
-        </div>
-      )}
     </Card>
   )
 }
@@ -97,6 +73,7 @@ export default function TransactionsPage() {
 
   const [isMounted, setIsMounted] = useState(false)
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 300)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [isAddingExpense, setIsAddingExpense] = useState(false)
   const [isAddingInvoice, setIsAddingInvoice] = useState(false)
@@ -162,15 +139,17 @@ export default function TransactionsPage() {
   }, [user, isUserLoading, router])
 
   const filteredTransactions = transactions?.filter(t => {
-    const matchesSearch = t.source?.toLowerCase().includes(search.toLowerCase()) ||
-      t.description?.toLowerCase().includes(search.toLowerCase())
+    const matchesSearch = !debouncedSearch ||
+      t.source?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      t.description?.toLowerCase().includes(debouncedSearch.toLowerCase())
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(t.source)
     return matchesSearch && matchesCategory
   }) || []
 
   const filteredInvoices = invoices?.filter(i => {
-    const matchesSearch = i.clientName?.toLowerCase().includes(search.toLowerCase()) ||
-      i.$id?.toLowerCase().includes(search.toLowerCase())
+    const matchesSearch = !debouncedSearch ||
+      i.clientName?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      i.$id?.toLowerCase().includes(debouncedSearch.toLowerCase())
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(i.categoryName || 'Invoices')
     return matchesSearch && matchesCategory
   }) || []
@@ -351,15 +330,19 @@ export default function TransactionsPage() {
   }
 
   const handleExportCSV = () => {
+    // Only export selected expenses and invoices
+    const selectedExpensesData = filteredTransactions.filter(t => selectedExpenses.has(t.$id))
+    const selectedInvoicesData = filteredInvoices.filter(i => selectedInvoices.has(i.$id))
+
     const allRecords = [
-      ...filteredTransactions.map(t => ({
+      ...selectedExpensesData.map(t => ({
         Type: 'Expense',
         Source: t.source,
         Description: t.description,
         Amount: t.amount,
         Date: new Date(t.$createdAt).toLocaleDateString()
       })),
-      ...filteredInvoices.map(i => ({
+      ...selectedInvoicesData.map(i => ({
         Type: 'Invoice',
         Source: i.clientName,
         Description: i.invoiceNumber,
@@ -394,13 +377,26 @@ export default function TransactionsPage() {
     a.click()
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
-    toast({ title: "CSV exported successfully" })
+    toast({ title: `${allRecords.length} records exported successfully` })
   }
 
   if (isUserLoading || isTransLoading || isInvoicesLoading || !isMounted) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex min-h-screen bg-background">
+        <SidebarNav />
+        <main className="flex-1 md:mr-16 md:ml-16 p-3 md:p-8 mt-16 md:mt-0">
+          <div className="max-w-6xl mx-auto space-y-4 md:space-y-6 w-full px-3 md:px-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Records</h2>
+            </div>
+            <div className="hidden md:block">
+              <TableSkeleton rows={5} />
+            </div>
+            <div className="md:hidden">
+              <CardListSkeleton count={4} />
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
@@ -569,7 +565,7 @@ export default function TransactionsPage() {
                         </td>
                         <td className="p-3">{invoice.clientName}</td>
                         <td className="p-3">Invoice</td>
-                        <td className="p-3">None</td>
+                        <td className="p-3">{invoice.clientName}</td>
                         <td className="p-3">{invoice.invoiceNumber || "None"}</td>
                         <td className="p-3">{formatUGX(invoice.totalAmount)}</td>
                         <td className="p-3">{new Date(invoice.$createdAt).toLocaleDateString()}</td>
@@ -586,7 +582,7 @@ export default function TransactionsPage() {
             </div>
           </div>
 
-          {/* Mobile View - Expandable Cards */}
+          {/* Mobile View */}
           <div className="md:hidden space-y-3">
             {/* Mobile Action Buttons */}
             {(selectedExpenses.size > 0 || selectedInvoices.size > 0) && (
@@ -611,9 +607,11 @@ export default function TransactionsPage() {
               />
             ))}
             {filteredTransactions.length === 0 && filteredInvoices.length === 0 && (
-              <div className="p-8 text-center text-muted-foreground">
-                <p>No records found. Click the + button to add one.</p>
-              </div>
+              <EmptyList
+                icon={Receipt}
+                message="No records found"
+                submessage="Click the + button to add an expense or invoice"
+              />
             )}
           </div>
 

@@ -13,7 +13,9 @@ import { SidebarNav, BottomNav } from "@/components/nav-main"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Plus, Loader2, Trash2 } from "lucide-react"
+import { FileText, Plus, Loader2, Trash2, Wallet } from "lucide-react"
+import { EmptyState } from "@/components/empty-state"
+import { StatsSkeleton } from "@/components/loading-states"
 import { useUser } from "@/appwrite"
 import { InvoiceService, ExpenseService, type InvoiceDocument } from "@/appwrite/database"
 import {
@@ -133,8 +135,22 @@ export default function InvoicesPage() {
 
   if (isUserLoading || isInvoicesLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex min-h-screen bg-background pb-20 md:pb-0">
+        <div className="hidden md:block w-16 md:w-64 fixed inset-y-0">
+          <SidebarNav />
+        </div>
+        <main className="flex-1 md:mr-16 md:ml-16 p-4 md:p-8 mt-16 md:mt-0">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="h-9 w-48 bg-muted rounded animate-pulse mb-2" />
+                <div className="h-5 w-32 bg-muted rounded animate-pulse" />
+              </div>
+            </div>
+            <StatsSkeleton count={2} />
+          </div>
+        </main>
+        <BottomNav />
       </div>
     )
   }
@@ -156,7 +172,7 @@ export default function InvoicesPage() {
             </div>
             <Dialog>
               <DialogTrigger asChild>
-                <Button>
+                <Button data-dialog-trigger="invoice">
                   <Plus className="h-4 w-4 mr-2" />
                   New Invoice
                 </Button>
@@ -196,12 +212,15 @@ export default function InvoicesPage() {
 
           <div className="space-y-4">
             {!invoices || invoices.length === 0 ? (
-              <Card className="border-dashed bg-muted/20">
-                <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground text-center">
-                  <FileText className="h-12 w-12 mb-4 opacity-20" />
-                  <p>No invoices yet.</p>
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={Wallet}
+                title="No invoices yet"
+                description="Create your first invoice to start tracking client billing and payments."
+                action={{
+                  label: 'Create Invoice',
+                  onClick: () => document.querySelector<HTMLButtonElement>('[data-dialog-trigger="invoice"]')?.click()
+                }}
+              />
             ) : (
               invoices.map((invoice) => (
                 <Card key={invoice.$id} className="shadow-sm hover:shadow-md transition-shadow group">
@@ -224,7 +243,7 @@ export default function InvoicesPage() {
 
                       <div className="flex flex-wrap items-center gap-6">
                         <div className="text-right min-w-[120px]">
-                          <p className="font-bold text-lg">{formatUGX(invoice.totalAmount)}</p>
+                          <p className="font-bold text-lg text-white">{formatUGX(invoice.totalAmount)}</p>
                           <Badge
                             variant={invoice.status === 'paid' ? 'secondary' : 'outline'}
                             className="capitalize cursor-pointer select-none"

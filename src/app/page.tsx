@@ -8,7 +8,7 @@ import React, { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { SidebarNav, BottomNav } from "@/components/nav-main"
 import { Card, CardContent } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
+import { DashboardSkeleton } from "@/components/loading-states"
 import {
   ResponsiveContainer,
   PieChart,
@@ -143,8 +143,13 @@ export default function Dashboard() {
 
   if (isUserLoading || isLoading || !isMounted) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex min-h-screen bg-background">
+        <SidebarNav />
+        <main className="flex-1 md:mr-16 md:ml-16 p-3 md:p-8 mt-16 md:mt-0">
+          <div className="max-w-6xl mx-auto w-full px-3 md:px-8">
+            <DashboardSkeleton />
+          </div>
+        </main>
       </div>
     )
   }
@@ -177,7 +182,7 @@ export default function Dashboard() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Income</span>
-              <span className="text-sm font-bold text-positive truncate">{formatUGX(totalIncome)}</span>
+              <span className="text-sm font-bold text-white truncate">{formatUGX(totalIncome)}</span>
             </div>
           </div>
 
@@ -193,7 +198,7 @@ export default function Dashboard() {
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-bold uppercase text-muted-foreground">Income</span>
-              <span className="text-lg font-bold text-positive truncate">{formatUGX(totalIncome)}</span>
+              <span className="text-lg font-bold text-white truncate">{formatUGX(totalIncome)}</span>
             </div>
           </div>
 
